@@ -1,44 +1,31 @@
-import torch
-from TTS.api import TTS
 import streamlit as st
-from scipy.io.wavfile import write
-import os
+import torch
+from io import BytesIO
 
-# TTS 모델 로드
-device = "cuda" if torch.cuda.is_available() else "cpu"
-tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
+# 사용자 정의 TTS 모델 불러오기
+# 모델의 경로와 구조에 맞게 불러옵니다.
+# 예: 모델이 WaveGlow나 Tacotron2 기반이라면 해당 라이브러리에서 모델 불러오기 코드를 추가
+model = torch.load("path_to_your_model.pt")  # 예시 경로
+model.eval‎()
 
-# Streamlit 인터페이스 설정
-st.title("TTS 음성 합성")
-st.write("텍스트를 입력하고 음성으로 변환된 파일을 재생하고 다운로드할 수 있습니다.")
+st.title("커스텀 한국어 TTS 웹 애플리케이션")
+st.write("텍스트를 입력하면 해당 텍스트를 음성으로 들려드립니다.")
 
 # 텍스트 입력
-text = st.text_input("텍스트 입력:", "안녕하세요, 이 텍스트를 음성으로 변환합니다.")
+text_input = st.text_area("변환할 텍스트를 입력하세요", "안녕하세요, TTS를 사용해보세요!")
 
-# 음성 생성 버튼
-if st.button("음성 생성"):
-    # 음성 합성 및 임시 파일로 저장
-    output_path = "output_audio.wav"
-    tts.tts_to_file(
-        text=text,
-        speaker_wav="c://chat//new//input.wav",  # 화자의 음성 스타일을 위한 참조 음성 파일
-        language="ko",
-        file_path=output_path
-    )
-
-    # Streamlit에서 저장한 오디오 파일 재생
-    st.audio(output_path, format="audio/wav")
-
-    # 다운로드 버튼 추가
-    with open(output_path, "rb") as audio_file:
-        audio_bytes = audio_file.read()
-        st.download_button(
-            label="음성 다운로드",
-            data=audio_bytes,
-            file_name="output_audio.wav",
-            mime="audio/wav"
-        )
-
-    # 다운로드 후 파일 삭제
-    if os.path.exists(output_path):
-        os.remove(output_path)
+# 버튼 클릭 시 음성 생성
+if st.button("텍스트 음성 변환"):
+    if text_input:
+        # 사용자 정의 TTS 모델로 음성 생성
+        with torch.no_grad():
+            # 텍스트 -> 음성 변환 (이 부분은 모델 구조에 맞춰 수정 필요)
+            audio_output = model.generate(text_input)  # 예시: .generate() 메서드 사용
+            
+        # 오디오 포맷을 맞춰서 변환 후 Streamlit에서 재생
+        audio_bytes = BytesIO(audio_output)
+        audio_bytes.seek(0)
+        
+        st.audio(audio_bytes, format="audio/wav")  # 오디오 형식에 맞게 지정
+    else:
+        st.write("텍스트를 입력해 주세요.")
